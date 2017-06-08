@@ -661,10 +661,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     return;
                 }
 
-                try {
-                    writeDataToFile(data, cameraRollFile);
-                } catch (IOException e) {
-                    promise.reject("failed to save image file", e);
+                Throwable error = writeDataToFile(data, cameraRollFile);
+                if (error != null) {
+                    promise.reject("failed to save image file", error);
                     return;
                 }
 
@@ -681,10 +680,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     return;
                 }
 
-                try {
-                    writeDataToFile(data, tempFile);
-                } catch (IOException e) {
-                    promise.reject("failed to save image file", e);
+                Throwable error = writeDataToFile(data, pictureFile);
+                if (error != null) {
+                    promise.reject("failed to save image file", error);
                     return;
                 }
 
@@ -699,10 +697,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     return;
                 }
 
-                try {
-                    writeDataToFile(data, tempFile);
-                } catch (IOException e) {
-                    promise.reject("failed to save image file", e);
+                Throwable error = writeDataToFile(data, tempFile);
+                    if (error != null) {
+                    promise.reject("failed to save image file", error);
                     return;
                 }
 

@@ -223,6 +223,7 @@ export default class Camera extends Component {
       description: '',
       mirrorImage: props.mirrorImage,
       fixOrientation: props.fixOrientation,
+      skipImageProcessing: props.skipImageProcessing,
       ...options
     };
 
