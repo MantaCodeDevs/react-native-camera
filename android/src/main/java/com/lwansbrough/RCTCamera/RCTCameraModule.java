@@ -536,7 +536,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 AsyncTask.execute(new Runnable() {
                     @Override
                     public void run() {
-                        processImage(new MutableImage(data), options, promise);
+                        if (options.hasKey("skipImageProcessing") && options.getBoolean("skipImageProcessing")) {
+                            processImage(data, options, promise);
+                        } else {
+                            processImage(new MutableImage(data), options, promise);
+                        }
                     }
                 });
 
@@ -648,6 +652,67 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         }
     }
 
+    private synchronized void processImage(byte[] data, ReadableMap options, Promise promise) {
+        switch (options.getInt("target")) {
+            case RCT_CAMERA_CAPTURE_TARGET_CAMERA_ROLL: {
+                File cameraRollFile = getOutputCameraRollFile(MEDIA_TYPE_IMAGE);
+                if (cameraRollFile == null) {
+                    promise.reject("Error creating media file.");
+                    return;
+                }
+
+                try {
+                    writeDataToFile(data, cameraRollFile);
+                } catch (IOException e) {
+                    promise.reject("failed to save image file", e);
+                    return;
+                }
+
+                addToMediaStore(cameraRollFile.getAbsolutePath());
+
+                resolve(cameraRollFile, promise);
+
+                break;
+            }
+            case RCT_CAMERA_CAPTURE_TARGET_DISK: {
+                File pictureFile = getOutputMediaFile(MEDIA_TYPE_IMAGE);
+                if (pictureFile == null) {
+                    promise.reject("Error creating media file.");
+                    return;
+                }
+
+                try {
+                    writeDataToFile(data, tempFile);
+                } catch (IOException e) {
+                    promise.reject("failed to save image file", e);
+                    return;
+                }
+
+                resolve(pictureFile, promise);
+
+                break;
+            }
+            case RCT_CAMERA_CAPTURE_TARGET_TEMP: {
+                File tempFile = getTempMediaFile(MEDIA_TYPE_IMAGE);
+                if (tempFile == null) {
+                    promise.reject("Error creating media file.");
+                    return;
+                }
+
+                try {
+                    writeDataToFile(data, tempFile);
+                } catch (IOException e) {
+                    promise.reject("failed to save image file", e);
+                    return;
+                }
+
+                resolve(tempFile, promise);
+
+                break;
+            }
+        }
+    }
+
     @ReactMethod
     public void stopCapture(final Promise promise) {
         if (mRecordingPromise != null) {
@@ -667,6 +732,20 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         }
         List<String> flashModes = camera.getParameters().getSupportedFlashModes();
         promise.resolve(null != flashModes && !flashModes.isEmpty());
+    }
+
+    private Throwable writeDataToFile(byte[] data, File file) {
+        try {
+            FileOutputStream fos = new FileOutputStream(file);
+            fos.write(data);
+            fos.close();
+        } catch (FileNotFoundException e) {
+            return e;
+        } catch (IOException e) {
+            return e;
+        }
+
+        return null;
     }
 
     private File getOutputMediaFile(int type) {
